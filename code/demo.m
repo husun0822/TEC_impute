@@ -10,7 +10,7 @@ for i = 1:1%numel(mad.tecData.time)
     
     % madrigal data
     timeStr = mad.tecData.time{i};
-    time = datetime(timeStr,'InputFormat','yyyy-MM-dd/hh:mm:ss');
+    time = datetime(timeStr,'InputFormat','yyyy-MM-dd/HH:mm:ss');
     lat = mad.tecData.latitude;
     lon = mad.tecData.longitude;
     tec = mad.tecData.tec_MedianFilter(:,:,i);
