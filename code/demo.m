@@ -10,7 +10,7 @@ for i = 1:1%numel(mad.tecData.time)
     
     % madrigal data
     timeStr = mad.tecData.time{i};
-    time = datetime(timeStr,'InputFormat','yyyy-MM-dd/hh:mm:ss');
+    time = datetime(timeStr,'InputFormat','yyyy-MM-dd/HH:mm:ss');
     lat = mad.tecData.latitude;
     lon = mad.tecData.longitude;
     tec = mad.tecData.tec_MedianFilter(:,:,i);
@@ -27,7 +27,7 @@ for i = 1:1%numel(mad.tecData.time)
     % 3 madrigal frames correspond to 1 igs frame
     t = ceil(i/3);
     timeStr_IGS = igs.tecData.time{t};
-    time_IGS = datetime(timeStr_IGS,'InputFormat','yyyy-MM-dd/hh:mm:ss');
+    time_IGS = datetime(timeStr_IGS,'InputFormat','yyyy-MM-dd/HH:mm:ss');
     lat_IGS = igs.tecData.latitude;
     lon_IGS = igs.tecData.longitude;
     tec_IGS = igs.tecData.tec(:,:,t);
