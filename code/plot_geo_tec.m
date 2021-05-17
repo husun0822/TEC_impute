@@ -1,6 +1,6 @@
 function [p,cb] = plot_geo_tec(lat,lon,tec,time)
-    % [p,cb] = plot_cgm_tec(lat,lon,tec,time) plots the global TEC map
-    % on GEO local time coordinates.
+    % [p,cb] = plot_geo_tec(lat,lon,tec,time) plots the global TEC map
+    % geographic (GEO) coordinates on GEO local time coordinates.
     % --------------Input--------------
     % lat - matrix of the latitude grid
     % lon - matrix of the longitude grid
