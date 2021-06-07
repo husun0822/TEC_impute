@@ -1,1 +1,4 @@
-This folder contains sample data (TEC median-filtered data & Spherical Harmonics) used for plotting.
+This folder contains:
+
+1. The International Geomagnetic Reference Field (IGRF) data that shows the magnetic equator locations
+
