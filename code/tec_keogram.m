@@ -12,22 +12,26 @@ output_data_directory = '/Users/jiaenren/ionoplot/data/vista_keogram';
 output_figure_directory = '/Users/jiaenren/ionoplot/plots/vista_keogram';
 
 %% specify dates for plotting
-dates = [datetime(2017,5,27), datetime(2017,5,28)];
+dates = datetime(2020,4,20):datetime(2020,4,22);
 % local times with the order that they are shown in the figure subplots
-local_time = [9,6,12,3,15,0,18,21]; 
+local_time = [9,6,12,3,15,0,18,21];
+% local_time = 12:15;
 % if true, combine multiple dates of data into one file/figure; if false,
 % create one file/figure for each single day given
-combined = false;
+combined = true;
 
 %%
 if combined
-    % extract keogram data from vista tec map
+    % extract keogram data farom vista tec map
     keogram_data = get_keograms_at_time(tecVista_directory, dates);
     % make keogram plot for each local time specified
-    fig = plot_keogram_at_local_times(keogram_data, local_time);
+    fig = plot_keogram_at_local_times(keogram_data, local_time, [-90,90]);
     output_name = [num2str(yyyymmdd(dates(1))) '-' num2str(yyyymmdd(dates(end)))];
     % save figure as png
-    print(fig,'-dpng','-r300',[output_figure_directory '/' output_name]);
+    %     print(fig,'-dpng','-r300',[output_figure_directory '/' output_name]);
+    fig.PaperType = 'a2';
+    fig.PaperOrientation='landscape';
+    print(fig,'-dpdf','-fillpage',[output_figure_directory '/' output_name]);
     % save keogram data
     save([output_data_directory '/' output_name], 'keogram_data');
     close(fig);

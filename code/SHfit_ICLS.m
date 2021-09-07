@@ -20,6 +20,10 @@ function [SH,SH_ICLS,output] = SHfit_ICLS(tec,lat,lon,order,mu,niter)
     %           resulted.  The second component is the number of iterations performed 
     %           in the outer loop within the solver.
     
+    % quality control
+    tec(tec>100) = nan; % max limit
+    tec(tec<=0) = nan; % min limit
+        
     b = tec(~isnan(tec));
     lats = lat(~isnan(tec));
     lons = lon(~isnan(tec));
@@ -34,6 +38,13 @@ function [SH,SH_ICLS,output] = SHfit_ICLS(tec,lat,lon,order,mu,niter)
     SH = SH_coeff(coeff,lat,lon); % reconstruct the TEC map with the obtained coefficients
     
     % applying inequality constrains once and reconstruct the resulting TEC map
+    if size(find(SH <= 0),1) > 181*361*0.1
+        % if there are too many negative TECs, skip ICLS to avoid memory
+        % issue
+        SH_ICLS = SH;
+        output = [-1,0];
+        return
+    end
     [coeff_ICLS,output] = ICLS(N,coeff,SH,lat,lon,order);
     SH_ICLS = SH_coeff(coeff_ICLS,lat,lon);
     
