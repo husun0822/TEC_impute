@@ -6,10 +6,36 @@ function [tecTimeTable] = load_vista(dataDirectory, times)
     tables = cell(n,1);
     for i = 1:n
         tstr = timeStr{i};
-        flist = dir([dataDirectory '/*' tstr '*']);
-        tables{i}=arrayfun(@(c) load([c.folder '/' c.name],'tecData'), flist, ...
+        flist = dir([dataDirectory '/**/*' tstr '*']);
+        tables{i}=arrayfun(@(c) load_vista_mat([c.folder '/' c.name]), flist(1), ...
             'UniformOutput',false);
     end
     tecTimeTableCells = vertcat(tables{:});
     tecTimeTable = vertcat(tecTimeTableCells{:});
+end
+
+function output = load_vista_mat(path)
+    tecData = load(path);
+    if ~isfield(tecData,'tecData')
+        output.tecData = tecData;
+    else
+        output = tecData;
+    end
+    if ~isfield(output.tecData, 'latitude') || ~isfield(output.tecData, 'local_time')
+        % create time grid
+        [~,name,~] = fileparts(path);
+        names = split(name,'_');
+        date_str = names{end};
+        stime = datetime(date_str,'InputFormat','yyMMdd');
+        timeGrid = stime+minutes(2.5):minutes(5):stime+days(1);
+        output.tecData.time = cellstr(datestr(timeGrid,'yyyy-mm-dd/HH:MM:SS'));
+        % create global latitude/local time grid
+        tec_size = size(output.tecData.imputed);
+        latLimits = [-90 90];
+        ltLimits = [0 24];
+        gratSize = tec_size(1:2);
+        [latGrid, ltGrid] = meshgrat(latLimits, ltLimits, gratSize);
+        output.tecData.latitude = latGrid;
+        output.tecData.local_time = ltGrid;
+    end
 end

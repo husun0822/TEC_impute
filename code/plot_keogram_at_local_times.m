@@ -14,7 +14,7 @@ function fig = plot_keogram_at_local_times(keogram_data, local_time, lat_range)
         lt = local_time(i);
         axes(ha(i));
         if lt > 6 && lt <=18
-            color_range = [0 30];
+            color_range = [0 60];
         else
             color_range = [0 30];
         end
