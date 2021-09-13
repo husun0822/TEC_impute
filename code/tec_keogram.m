@@ -1,8 +1,7 @@
 % This code load vista tec data, extract and plot keograms at different
 % local times, and save the extracted keogram data as .mat file.
 
-% The input vista tec data file must include both madrigal tec and vista
-% tec data. Use add_vista_to_madrigal first to create such data file.
+% The input vista tec data files must be in .mat format.
 
 % Jiaen Ren (jiaenren@umich.edu) 
 
