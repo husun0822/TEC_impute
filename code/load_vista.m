@@ -6,8 +6,11 @@ function [tecTimeTable] = load_vista(dataDirectory, times)
     tables = cell(n,1);
     for i = 1:n
         tstr = timeStr{i};
-        flist = dir([dataDirectory '/**/*' tstr '*']);
-        tables{i}=arrayfun(@(c) load_vista_mat([c.folder '/' c.name]), flist(1), ...
+        flist = dir([dataDirectory '/**/*' tstr '*.mat']);
+        if numel(flist)>1
+            flist = flist(1);
+        end
+        tables{i}=arrayfun(@(c) load_vista_mat([c.folder '/' c.name]), flist, ...
             'UniformOutput',false);
     end
     tecTimeTableCells = vertcat(tables{:});
