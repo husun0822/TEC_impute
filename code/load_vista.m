@@ -9,6 +9,9 @@ function [tecTimeTable] = load_vista(dataDirectory, times)
         flist = dir([dataDirectory '/**/*' tstr '*.mat']);
         if numel(flist)>1
             flist = flist(1);
+        elseif numel(flist)<1
+            error(['No file match pattern: ' [dataDirectory '/**/*' tstr '*.mat'] ...
+                ' Try running dir(pattern) to debug.']);
         end
         tables{i}=arrayfun(@(c) load_vista_mat([c.folder '/' c.name]), flist, ...
             'UniformOutput',false);
