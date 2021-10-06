@@ -38,6 +38,9 @@ else
     % apply the same procedure above but for each single day
     for time = dates
         keogram_data = get_keograms_at_time(tecVista_directory, time);
+        if isempty(keogram_data.keogram)
+            continue
+        end
         fig = plot_keogram_at_local_times(keogram_data, local_time, [-90, 90]);
         print(fig,'-dpng','-r300',[output_figure_directory '/' num2str(yyyymmdd(time))]);
         save([output_data_directory '/' num2str(yyyymmdd(time))], 'keogram_data');
