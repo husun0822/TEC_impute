@@ -1,34 +1,34 @@
 %% specify path and dates
 
 % figure output folder
-plot_foler = '/Users/jiaenren/ionoplot/plots/vista/';
-% plot_foler = '/Users/jiaenren/Dropbox (University of Michigan)/TEC_201709/plots/vista/';
+% plot_foler = '/Users/jiaenren/ionoplot/plots/vista/';
+plot_foler = '/Users/jiaenren/Dropbox (University of Michigan)/TEC_201709/plots/vista/';
 
 % madrigal data path
-mad_dir = '/Users/jiaenren/Dropbox (University of Michigan)/TEC_201709/Data/Madrigal';
+mad_dir = '/Users/jiaenren/Dropbox (University of Michigan)/TEC_201709/Data/Madrigal/mat';
 
 % SH data path
-sh_dir = '/Users/jiaenren/Dropbox (University of Michigan)/TEC_201709/Data/VISTA_SH/SH';
+sh_dir = '/Users/jiaenren/Dropbox (University of Michigan)/TEC_201709/Data/VISTA_SH/SH/low_order';
 
 % vista data path
-vista_dir = '/Users/jiaenren/Dropbox (University of Michigan)/TEC_201709/Data/VISTA_SH/VISTA';
+vista_dir = '/Users/jiaenren/Dropbox (University of Michigan)/TEC_201709/Data/VISTA_SH/VISTA/VISTA/low_order';
 
 % year and date for the plots, make sure the data paths have the data
 % needed for the year and date given
-year = 2017;
-
-% either specify several dates and only make plots within certain time interval
-% date_string = {'170907','170908'};
-% time_range = [datetime(year,9,7,23,50,0), datetime(year,9,8,0,10,0)];
-
+year = 2018;
+% either specify several dates
+date_string = {'180826'};
 % or make plots for every day in the year
-date_string = cellstr(datestr(datetime(2017,1,1):datetime(2017,12,31), 'yymmdd'));
+% date_string = cellstr(datestr(datetime(year,1,1):datetime(year,12,31), 'yymmdd'));
+
+% only make plots within a specific time interval
 time_range = [datetime(year,1,1,0,0,0), datetime(year,12,31,23,59,59)];
+% time_range = [datetime(year,9,7,23,50,0), datetime(year,9,8,0,10,0)];
 
 % load customized color map
 color_map = load('tec_color_map.mat');
 
-%% uncomment this block and other related codesif you want the output plots as video
+%% uncomment this block and other related codes if you want the output plots as video
 % v = VideoWriter(['vista_tec_' num2str(year)],'MPEG-4');
 % v.FrameRate = 10;
 % open(v);
@@ -46,13 +46,13 @@ for j = 1:numel(date_string)
     tec_imputed_maps = vista.imputed;
     
     mad_file = dir([mad_dir '/*/*' date_str '*.mat']);
-    if isempty(vista_file)
+    if isempty(mad_file)
         error(['Madrigal data not found for ' date_str]);
     end
     mad = load([mad_file.folder '/' mad_file.name]);
     
     sh_file = dir([sh_dir '/*/*' date_str '*.mat']);
-    if isempty(vista_file)
+    if isempty(sh_file)
         error(['SH data not found for ' date_str]);
     end
     sh = load([sh_file.folder '/' sh_file.name]);
@@ -182,7 +182,7 @@ for j = 1:numel(date_string)
         % save fig as fig
 %         savefig(fig,['./fig/' strrep(timeStr,'/','-') '.fig'],'compact');
         
-%         % capture figure as a video frame
+%         % uncomment this block to capture figure as a video frame
 %         frame = getframe(fig);
 %         disp(i);
 %         writeVideo(v,frame);
