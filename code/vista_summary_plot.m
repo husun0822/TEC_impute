@@ -43,7 +43,7 @@ for j = 1:numel(date_string)
         error(['VISTA data not found for ' date_str]);
     end
     vista = load([vista_file.folder '/' vista_file.name]);
-    tec_imputed_maps = vista.tec_vista;
+    tec_imputed_maps = vista.imputed;
     
     mad_file = dir([mad_dir '/*/*' date_str '*.mat']);
     if isempty(vista_file)
