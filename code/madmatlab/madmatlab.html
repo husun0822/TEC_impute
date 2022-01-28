@@ -1,0 +1,689 @@
+<html>
+<head><title>Madmatlab documentation</title></head>
+<body>
+<h1>Matlab Madrigal remote data access API reference guide</h1>
+<p>The easiest way to use the Madrigal Matlab remote data access API is to simply let the web interface write the script you need for you. 
+Just choose the <i>Access data</i> pull-down menu and choose <i>Create a command to download multiple exps</i>. Then follow the instructions, and you will 
+have the command you need to download whatever you want from Madrigal. Be sure to select Matlab as the language you want to create the command with.
+You can choose to download files as they are in Madrigal in either column-delimited ascii, Hdf5, or netCDF4 formats, or you can choose the
+parameters yourself (including derived parameters), and optionally include filters on the data you get back.</p>
+
+<p> The rest of this tutorial is for those who want to go beyond the automatically generated commands and write more advanced Matlab applications that
+access Madrigal data.</p>
+<blockquote>
+  <p>    The following are the Matlab methods for accessing Madrigal data remotely:</p>
+</blockquote>
+<ul>
+  <li><a href="#getMadrigalCgiUrl">getMadrigalCgiUrl</a> - converts the Madrigal url to the cgi form required by the other methods</li>
+<li><a href="#getVersion">getVersion</a> - returns a a string representing the Madrigal version</li>
+<li><a href="#getInstrumentsWeb">getInstrumentsWeb</a> - returns a list of all instruments in Madrigal database</li>
+<li><a href="#getExperimentsWeb">getExperimentsWeb</a> - returns a list of experiments for a given instument(s) and date range</li>
+<li><a href="#getCgiurlForExperiment">getCgiurlForExperiment</a> - returns cgiurl of experiment.url as returned by getExperimentsWeb</li>
+<li><a href="#getExperimentFilesWeb">getExperimentFilesWeb</a> - returns a list of files in a given experiment</li>
+<li><a href="#getParametersWeb">getParametersWeb</a> - returns a list of measured parameters in a file, and derived parameters available</li>
+<li><a href="#isprintWeb">isprintWeb</a> - returns data from a file as an array of doubles using user specified parameters and filters</li>
+<li><a href="#madDownloadFile">madDownloadFile</a> - downloads a Madrigal file to local computer in various formats</li>
+<li><a href="#madCalculatorWeb">madCalculatorWeb</a> - returns derived parameters for a given time and set of spatial locations</li>
+<li><a href="#globalDownload">globalDownload</a> - globalDownload is a script to search through the entire Madrigal database for appropriate files to store locally. You can generate the arguments for this command via the web interface.</li>
+<li><a href="#globalIsprint">globalIsprint</a> - returns user-specified data from multiple experiments. You can generate the arguments for this command via the web interface.</li>
+
+</ul>
+  <p> A good way to learn how to use this Matlab API is to run this <a href=#example>example</a>.
+  <a name="getMadrigalCgiUrl" id="getMadrigalCgiUrl"></a>
+<pre>
+   ***********************************************************
+function cgiUrl = getMadrigalCgiUrl(url)
+  getMadrigalCgiUrl  	parse the main madrigal page to get the cgi url
+ 
+  With Madrigal 3, this method simply returns the original url.
+
+  input: url to Madrigal
+
+  output: cgi url for that Madrigal Site
+
+  Note: parses the homepage for the accessData link
+</pre>
+<a name="getVersion" id="getVersion"></a>
+<pre>
+   ***********************************************************
+function version = getVersion(cgiurl)
+  getVersion  	returns a a string representing the Madrigal version
+
+  inputs:  cgiurl (string) to Madrigal site cgi directory 
+      (Example: 'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/') 
+      Note that method getMadrigalCgiUrl converts homepage url into cgiurl. 
+
+  output:
+    version - a atring representing the Madrigal version.
+
+ Returns 2.5 if Madrigal does not contain the getVersion service
+ 
+  Example:
+  version = getVersion('http://madrigal.haystack.mit.edu/cgi-bin/madrigal/')
+
+ Written by Bill Rideout (brideout@haystack.mit.edu)
+  $Id: madmatlab.html 6690 2018-12-18 19:29:14Z brideout $
+</pre>
+<a name="getInstrumentsWeb" id="getInstrumentsWeb"></a>
+<pre>
+   ***********************************************************
+function instArray = getInstrumentsWeb(cgiurl)
+  getInstrumentsWeb  	returns an array of instrument structs of instruments found on remote Madrigal server.
+
+  inputs:  cgiurl (string) to Madrigal site cgi directory 
+      (Example: 'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/') 
+      Note that method getMadrigalCgiUrl converts homepage url into cgiurl. 
+
+  output:
+     instArray - array of instrument structs found
+
+       instrument struct has the fields:
+
+     instrument.name (string) Example: 'Millstone Hill Incoherent Scatter Radar'
+     instrument.code (int) Example: 30
+     instrument.mnemonic (3 char string) Example: 'mlh'
+     instrument.latitude (double) Example: 45.0
+     instrument.longitude (double) Example: 110.0
+     instrument.altitude (double)  Example: 0.015 (km) 
+     instrument.category (string) Instrument category description.  May be
+       if Madrigal 2.6 or earlier.
+
+  Raises error if unable to return instrument array
+ 
+  Example:
+  getInstrumentsWeb('http://madrigal.haystack.mit.edu/cgi-bin/madrigal/')
+</pre>
+<a name="getExperimentsWeb" id="getExperimentsWeb"></a>
+<pre>
+   ***********************************************************
+function expArray = getExperimentsWeb(cgiurl, instCodeArray, starttime, endtime, localFlag)
+  getExperimentsWeb  	returns an array of experiment structs given input filter arguments from a remote Madrigal server.
+
+  Inputs:
+
+      1. cgiurl (string) to Madrigal site cgi directory 
+        (Example: 'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/') 
+         Note that method getMadrigalCgiUrl converts homepage url into cgiurl. 
+ 
+      2. instCodeArray - a 1 X N array of ints containing selected instrument codes.  Special value of 0 selects all instruments.
+ 
+      3. starttime - Matlab datenum double (must be UTC)
+ 
+      4. endtime - Matlab datenum double (must be UTC)
+
+      5. localFlag - 1 if local experiments only, 0 if all experiments 
+
+   Returns a startime sorted array of Experiment struct (May be empty):
+   
+   experiment.id (int) Example: 10000111
+   experiment.url (string) Example: 'http://madrigal.haystack.mit.edu/cgi-bin/madtoc/1997/mlh/03dec97'
+      Deprecated url used only in metadata. To see real url, use realUrl
+      field described below
+   experiment.name (string) Example: 'Wide Latitude Substorm Study'
+   experiment.siteid (int) Example: 1
+   experiment.sitename (string) Example: 'Millstone Hill Observatory'
+   experiment.instcode (int) Code of instrument. Example: 30
+   experiment.instname (string) Instrument name. Example: 'Millstone Hill Incoherent Scatter Radar'
+   experiment.starttime (double) Matlab datenum of experiment start
+   experiment.endtime (double) Matlab datenum of experiment end
+   experiment.isLocal (int) 1 if local, 0 if not 
+   experiment.madrigalUrl (string) - home url of Madrigal site with this
+       experiment. Example 'http://madrigal.haystack.mit.edu/madrigal'
+   experiment.PI - experiment principal investigator.  May be unknown for
+       Madrigal 2.5 and earlier sites.
+   experiment.PIEmail - PI email. May be unknown for Madrigal 2.6 or
+       earlier.
+   realUrl - real url to experiment valid for web browser
+
+  Raises error if unable to return experiment array
+ 
+  Example: expArray = getExperimentsWeb('http://madrigal.haystack.mit.edu/cgi-bin/madrigal/', ...
+                                         30, datenum('01/01/1998'), datenum('12/31/1998'), 1);
+
+   Note that if the returned
+   experiment is not local, the experiment.id will be -1.  This means that you
+   will need to call getExperimentsWeb a second time with the cgiurl of the 
+   non-local experiment (getCgiurlForExperiment(experiment.madrigalUrl)).  This is because 
+   while Madrigal sites share metadata about experiments, the real experiment ids are only
+   known by the individual Madrigal sites.  See testMadmatlab.m
+   for an example of this.
+</pre>
+<a name="getCgiurlForExperiment" id="getCgiurlForExperiment"></a>
+<pre>
+   ***********************************************************
+function cgiurl = getCgiurlForExperiment(experiment)
+  getCgiurlForExperiment  	returns cgiurl of experiment.url as returned by getExperimentsWeb.
+
+  inputs:  experiment struct as returned by getExperimentsWeb or getExperiments.
+
+
+  output:
+     cgiurl of experiment
+
+  Simply truncates experiment.url to remove /madtoc/<YYYY>/<inst>/<date>
+ 
+  Example: If expArray is the value returned in the getExperimentsWeb example, and
+           expArray(1).url = 'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/madtoc/1998/mlh/07jan98', then
+
+     getCgiurlForExperiment(expArray(1))
+
+     returns: 
+
+          'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/'
+</pre>
+<a name="getExperimentFilesWeb" id="getExperimentFilesWeb"></a>
+<pre>
+   ***********************************************************
+function expFileArray = getExperimentFilesWeb(cgiurl, experimentId)
+  getExperimentFilesWeb  	returns an array of experiment file structs given experiment id from a remote Madrigal server.
+
+  Note that it is assumed that experiment is local to cgiurl.  If not,
+  empty list will be returned. Use getCgiurlForExperiment to get the correct
+  cgiurl for any given experiment struct.
+
+  Inputs:
+
+      1. cgiurl (string) to Madrigal site cgi directory that has that
+      experiment.
+        (Example: 'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/') 
+         Note that method getMadrigalCgiUrl converts homepage url into cgiurl. 
+ 
+      2. experiment id (int) as returned by getExperiments or
+         getExperimentsWeb
+
+   Return array of Experiment File struct (May be empty):
+   
+   file.name (string) Example '/opt/mdarigal/blah/mlh980120g.001'
+   file.kindat (int) Kindat code.  Example: 3001
+   file.kindatdesc (string) Kindat description: Example 'Basic Derived Parameters'
+   file.category (int) (1=default, 2=variant, 3=history, 4=real-time)
+   file.status (string)('preliminary', 'final', or any other description)
+   file.permission (int)  0 for public, 1 for private 
+
+  Raises error if unable to return experiment file array
+ 
+  Example: expFileArray =
+  getExperimentFilesWeb('http://madrigal.haystack.mit.edu/cgi-bin/madrigal/', 10001686);
+</pre>
+<a name="getParametersWeb" id="getParametersWeb"></a>
+<pre>
+   ***********************************************************
+function parmArray = getParametersWeb(cgiurl, filename)
+  getParametesWeb  	returns an array of parameter structs given filename from a remote Madrigal server.
+
+  Note that it is assumed that filename is local to cgiurl.  If not,
+  empty list will be returned.
+
+  Inputs:
+
+      1. cgiurl (string) to Madrigal site cgi directory that has that
+      filename.
+        (Example: 'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/') 
+         Note that method getMadrigalCgiUrl converts homepage url into cgiurl. 
+ 
+      2. filename (string) as returned by getExperimentFiles or
+         getExperimentFilesWeb
+
+   Return array of Parameter struct:
+   
+       parameter.mnemonic (string) Example 'dti'
+       parameter.description (string) Example:
+          "F10.7 Multiday average observed (Ott) - Units: W/m2/Hz"
+       parameter.isError (int) 1 if error parameter, 0 if not
+       parameter.units (string) Example "W/m2/Hz"
+       parameter.isMeasured (int) 1 if measured, 0 if derivable
+       parameter.category (string) Example: "Time Related Parameter" 
+       parameter.isSure (int) 1 if can be found for all records, 0 if only
+           for some records (implies not all records have same measured
+           parameters)
+
+  Raises error if unable to return parameter array
+ 
+  Example: parmArray = getParametersWeb('http://madrigal.haystack.mit.edu/cgi-bin/madrigal/', ...
+                                        '/opt/madrigal/experiments/1998/mlh/07jan98/mil980107g.001')
+</pre>
+<a name="isprintWeb" id="isprintWeb"></a>
+<pre>
+   ***********************************************************
+function records = isprintWeb(cgiUrl, file, parms, user_fullname, user_email, user_affiliation, filters, outputFile, missing, assumed, knownbad)
+  isprintWeb  	Create an isprint-like 3D array of doubles via a command similar to the isprint command-line application, but access data via the web
+  
+  The calling syntax is:
+  
+  		[records] = isprintWeb(cgiUrl, file, parms, user_fullname, user_email, user_affiliation, [filters, [outputFile, [missing, [assumed, [knownbad] ] ] ] ])
+  
+   where 
+
+     cgiUrl (string) to Madrigal site cgi directory that has that
+      filename.
+        (Example: 'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/') 
+         Note that method getMadrigalCgiUrl converts homepage url into cgiUrl.
+  
+     file is path to file
+         (example = '/home/brideout/data/mlh980120g.001')
+  
+     parms is the desired parameters in the form of a comma-delimited
+         string of Madrigal mnemonics (example = 'gdlat,ti,dti')
+
+     user_fullname - is user name (string)
+
+     user_email - is user email address (string)
+
+     user_affiliation - is user affiliation (string) 
+  
+     filters is the optional filters requested in exactly the form given in isprint
+         command line (example = 'time1=15:00:00 date1=01/20/1998 
+                       time2=15:30:00 date2=01/20/1998 filter=ti,500,1000')
+         See:  http://madrigal.haystack.mit.edu/madrigal/ug_commandLine.html for details
+
+     outputFile - save the output to an output file.  If externsion is in
+       .h5, .hdf, or .hdf5, the output format will be Madrigal Hdf5.  If
+       extension is .nc, it will be netCDF4.  Otherwise ascii.
+
+     missing is an optional double to represent missing values.  Defaults to NaN
+
+     assumed is an optional double to represent assumed values.  Defaults to NaN
+
+     knownbad is an optional double to represent knownbad values.  Defaults to NaN
+
+     The returned records is a three dimensional array of double with the dimensions:
+
+         [Number of rows, number of parameters requested, number of records]
+
+     If error or no data returned, will return error explanation string instead.
+
+   Example: data = isprintWeb('http://madrigal.haystack.mit.edu/cgi-bin/madrigal/', ...
+                                '/opt/madrigal/experiments/1998/mlh/07jan98/mil980107g.001', ...
+                                'gdlat,ti,dti', ...
+                                'Bill Rideout', 'wrideout@haystack.mit.edu', 'MIT');
+
+   For now avoids limits with urlread by only asking for maxRecs records at once.  Repeatedly
+   calls isprintUnguarded, which is a method without any additional filtering.
+
+    $Id: madmatlab.html 6690 2018-12-18 19:29:14Z brideout $
+</pre>
+<a name="madDownloadFile" id="madDownloadFile"></a>
+<pre>
+   ***********************************************************
+function  result  = madDownloadFile(cgiurl,  fullFilename, outputFile, user_fullname, user_email, user_affiliation, format )
+madDownloadFile downloads a Madrigal file to local computer in various
+formats
+
+    The calling syntax is:
+       result  = madDownloadFile(cgiurl,  fullFilename, outputFile, [ format ] )
+   
+ Inputs: 
+
+      1. cgiurl (string) to Madrigal site cgi directory 
+        (Example: 'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/') 
+         Note that method getMadrigalCgiUrl converts homepage url into
+         cgiurl. 
+
+      2. fullFilename - file to download as returned by getExperimentFilesWeb.m
+
+      3. outputFile - name to save new file to
+
+      4. user_fullname - is user name (string)
+
+      5. user_email - is user email address (string)
+
+      6. user_affiliation - is user affiliation (string) 
+
+      7. format - one of the following strings:
+          'simple', 'hdf5', 'netCDF4'
+              'simple' is the default if not specified.  
+
+         'netCDF4' option will only work with Madrigal 3.0 or greater
+
+    $Id: madmatlab.html 6690 2018-12-18 19:29:14Z brideout $
+
+result = -1;
+</pre>
+<a name="madCalculatorWeb" id="madCalculatorWeb"></a>
+<pre>
+   ***********************************************************
+function record = madCalculatorWeb(cgiUrl, ...
+                                   time, ...
+                                   startLat, ...
+                                   endLat, ...
+                                   stepLat, ...
+                                   startLong, ...
+                                   endLong, ...
+                                   stepLong, ... 
+                                   startAlt, ...
+                                   endAlt, ...
+                                   stepAlt, ...
+                                   parms)
+  madCalculatorWeb  	Create a matrix of doubles via a the Madrigal derivation engine for a time and range of lat, long, and alt
+  
+  The calling syntax is:
+  
+  		[record] = madCalculatorWeb(cgiurl, time, startLat, endLat, stepLat, startLong, endLong, stepLong, 
+                                   startAlt, endAlt, stepAlt, parms)
+  
+   where 
+
+     cgiurl (string) to Madrigal site cgi directory that has that
+      filename.
+        (Example: 'http://madrigal.haystack.mit.edu/cgi-bin/madrigal/') 
+         Note that method getMadrigalCgiUrl converts homepage url into cgiurl.
+  
+     time - Matlab datenum double (must be UTC)	7. startLat - Starting geodetic latitude, -90 to 90 (required)
+     
+     endLat - Ending geodetic latitude, -90 to 90 (required)
+     
+     stepLat - Latitude step (0.1 to 90) (required)
+     
+     startLong - Starting geodetic longitude, -180 to 180 (required)
+     
+     endLong - Ending geodetic longitude, -180 to 180 (required)
+     
+     stepLong - Longitude step (0.1 to 180) (required)
+     
+     startAlt - Starting geodetic altitude, >= 0 (required)
+     
+     endAlt - Ending geodetic altitude, > 0 (required)
+     
+     stepAlt - Altitude step (>= 0.1) (required)
+  
+     parms is the desired parameters in the form of a comma-delimited
+         string of Madrigal mnemonics (example = 'gdlat,ti,dti')
+  
+
+     The returned record is a matrix of doubles with the dimensions:
+
+         [(num lat steps * num long steps * num alt steps), 3 + num of parms]
+
+     The first three columns will always be lat, long, and alt, so there are three
+     additional columns to the number of parameters requested via the parms argument.
+
+     If error or no data returned, will return error explanation string instead.
+
+     Example: result = madCalculatorWeb('http:/grail.haystack.mit.edu/cgi-bin/madrigal', ...
+                                         now,45,55,5,45,55,5,200,300,50,'bmag,bn');
+</pre>
+<a name="globalDownload" id="globalDownload"></a>
+<pre>
+   ***********************************************************
+function [] = globalDownload(url, ...
+    outputDir, ...
+    user_fullname, ...
+    user_email, ...
+    user_affiliation, ...
+    format, ...
+    startTime, ...
+    endTime, ...
+    inst, ...
+    kindats, ...
+    expName, ...
+    fileDesc)
+ globalDownload is a script to search through the entire Madrigal database
+ for appropriate files in ascii, hdf5, or netCDF4 format to store locally
+
+    Inputs:
+
+        url - url to homepage of site to be searched (Example: 
+              'http://madrigal.haystack.mit.edu/madrigal/'
+
+        outputDir - the local directory to store the downloaded files.
+                 (Example: '/tmp/isprint.txt')
+
+        user_fullname - the full user name (Example: 'Bill Rideout')
+
+        user email -  Example: 'brideout@haystack.mit.edu'
+
+        user_affiliation - Example: 'MIT'
+
+        format - either "ascii" or "hdf5" or "netCDF4" (if Madrigal 3 site).  Ascii is simple column
+        delimited acsii
+
+        startTime - a Matlab time to begin search at. Example:
+                    datenum('20-Jan-1998 00:00:00') Time in UT
+
+        endTime - a Matlab time to end search at. Example:
+                  datenum('21-Jan-1998 23:59:59') Time in UT
+
+        inst - instrument code (integer).  See 
+            http://cedar.openmadrigal.org/instMetadata/
+            for this list. Examples: 30 for Millstone
+            Hill Incoherent Scatter Radar, 80 for Sondrestrom Incoherent 
+            Scatter Radar
+
+    Optional inputs
+
+        kindats - is an optional array of kindat (kinds of data) codes to accept.
+           The default is an empty array, which will accept all kindats.
+  
+        expName - a case insensitive regular expression that matches the experiment
+           name.  Default is zero-length string, which matches all experiment names.
+
+        fileDesc - a case insensitive regular expression that matches the file description.
+           Default is zero-length string, which matches all file descriptions.
+
+    Returns: Nothing.
+
+    Affects: Writes downloaded files to outputDir
+
+        
+
+  Example: globalDownload('http://madrigal.haystack.mit.edu/madrigal/', ...
+                         '/tmp/download', ...
+                         'Bill Rideout', ...
+                         'brideout@haystack.mit.edu', ...
+                         'MIT', ...
+                         'ascii', ...
+                         datenum('20-Jan-1998 00:00:00'), ...
+                         datenum('21-Jan-1998 23:59:59'), ...
+                         30);
+
+  $Id: madmatlab.html 6690 2018-12-18 19:29:14Z brideout $
+
+</pre>
+<a name="globalIsprint" id="globalIsprint"></a>
+<pre>
+   ***********************************************************
+function [] = globalIsprint(url, ...
+    parms, ...
+    output, ...
+    user_fullname, ...
+    user_email, ...
+    user_affiliation, ...
+    startTime, ...
+    endTime, ...
+    inst, ...
+    format, ...
+    filters, ...
+    kindats, ...
+    expName, ...
+    fileDesc)
+ globalIsprint is a script to search through the entire Madrigal database
+ for appropriate data to print in ascii to a file
+
+    Inputs:
+
+        url - url to homepage of site to be searched (Example: 
+              'http://madrigal.haystack.mit.edu/madrigal/'
+
+        parms - a comma delimited string listing the desired Madrigal 
+            parameters in mnemonic form.  
+            (Example: 'year,month,day,hour,min,sec,gdalt,dte,te').  
+            Ascii space-separated data will be returned in the same  
+            order as given in this string. See 
+            http://cedar.openmadrigal.org/parameterMetadata/
+            for all possible parameters.
+
+        output - the local file name to store the resulting ascii data, or
+                 local directory to store files (one for each Madrigal
+                 file) if format set. If a file name, then all data is
+                 stored in column-delimited ascii in one file.  If a
+                 directory, then one file created per Madrigal file read,
+                 and format of output files must be set via format arg.
+
+        user_fullname - the full user name (Example: 'Bill Rideout')
+
+        user email -  Example: 'brideout@haystack.mit.edu'
+
+        user_affiliation - Example: 'MIT'
+
+        startTime - a Matlab time to begin search at. Example:
+                    datenum('20-Jan-1998 00:00:00') Time in UT
+
+        endTime - a Matlab time to end search at. Example:
+                  datenum('21-Jan-1998 23:59:59') Time in UT
+
+        inst - instrument code (integer).  See 
+            http://cedar.openmadrigal.org/instMetadata/
+            for this list. Examples: 30 for Millstone
+            Hill Incoherent Scatter Radar, 80 for Sondrestrom Incoherent 
+            Scatter Radar
+
+    Optional inputs
+        
+        format - either empty string (the default) is saving to a single file, or
+           'Hdf5', 'netCDF4', or 'ascii' if saving individual files to a
+           directory.
+
+        filters - is the optional filters requested in exactly the form given in isprint
+         command line (example = 'filter=gdalt,,500 filter=ti,500,1000')
+         See:  http://madrigal.haystack.mit.edu/madrigal/ug_commandLine.html for details
+
+        kindats - is an optional array of kindat (kinds of data) codes to accept.
+           The default is an empty array, which will accept all kindats.
+  
+        expName - a case insensitive regular expression that matches the experiment
+           name.  Default is zero-length string, which matches all experiment names.
+
+        fileDesc - a case insensitive regular expression that matches the file description.
+           Default is zero-length string, which matches all file descriptions.
+
+    Returns: Nothing.
+
+    Affects: Writes results to output file
+
+        
+
+  Example: globalIsprint('http://madrigal.haystack.mit.edu/madrigal/', ...
+                         'year,month,day,hour,min,sec,gdalt,dte,te', ...
+                         '/tmp/isprint.txt', ...
+                         'Bill Rideout', ...
+                         'brideout@haystack.mit.edu', ...
+                         'MIT', ...
+                         datenum('20-Jan-1998 00:00:00'), ...
+                         datenum('21-Jan-1998 23:59:59'), ...
+                         30);
+
+  $Id: madmatlab.html 6690 2018-12-18 19:29:14Z brideout $
+
+</pre>
+
+  <a name="example" id="example"></a>
+  <h4> Example Matlab code use this API </h4>
+  <pre>
+  % demo program of madmatlab running on a pc or linux
+
+madurl = 'http://madrigal.haystack.mit.edu/madrigal';
+
+cgiurl = getMadrigalCgiUrl(madurl)
+
+'List all instruments, and their latitudes and longitudes:'
+instArray = getInstrumentsWeb(cgiurl);
+for i = 1:length(instArray)
+    [s,errmsg] = sprintf('Instrument: %s, at lat %f and long %f', ...
+            instArray(i).name, ...
+            instArray(i).latitude, ...
+            instArray(i).longitude);
+     s
+end
+% now list all experiments from local Madrigal site with mlh (code 30) in
+% 1998 - should be data if default files installed...
+startdate = datenum('01/01/1998');
+enddate = datenum('12/31/1998');
+expArray = getExperimentsWeb(cgiurl, 30, startdate, enddate, 1);
+for i = 1:length(expArray)
+    [s,errmsg] = sprintf('Experiment name: %s, at url %s and id %i', ...
+            expArray(i).name, ...
+            expArray(i).url, ...
+            expArray(i).id);
+     s
+end
+
+% now list all files in the first experiment
+expFileArray = getExperimentFilesWeb(cgiurl, expArray(1).id);
+for i = 1:length(expFileArray)
+    [s,errmsg] = sprintf('File name: %s, with kindat %i', ...
+            expFileArray(i).name, ...
+            expFileArray(i).kindat);
+     s
+end
+% now first 2 parameters in the last file
+parmArray = getParametersWeb(cgiurl, expFileArray(end).name)
+for i = 1:10
+    [s,errmsg] = sprintf('Parameter mnemonic: %s, description "%s" -- isMeasured = %i', ...
+            parmArray(i).mnemonic, ...
+            parmArray(i).description, ...
+            parmArray(i).isMeasured);
+     s
+end
+%  run isprintWeb for that file for first two parameters
+parmStr = sprintf('%s,%s', parmArray(1).mnemonic, parmArray(2).mnemonic);
+data = isprintWeb(cgiurl, expFileArray(1).name, parmStr, 'Bill Rideout', 'wrideout@haystack.mit.edu', 'MIT');
+% print first 10 records
+data(:,:,1:10)
+
+% download that data file in simple format
+result = madDownloadFile(cgiurl, expFileArray(1).name, '/tmp/junk.txt', 'Bill Rideout', 'brideout@haystack.mit.edu', 'MIT');
+'downloaded file to /tmp/junk.txt'
+
+% run globalIsprint, which can gather data from multiple files at once
+globalIsprint(madurl, ...
+              'year,month,day,hour,min,sec,gdalt,dte,te', ...
+              '/tmp/isprint.txt', ...
+              'Bill Rideout', 'brideout@haystack.mit.edu', 'MIT', ...
+              datenum('20-Jan-1998 00:00:00'), datenum('21-Jan-1998 23:59:59'), 30);
+'globalIsprint output saved to /tmp/isprint.txt'
+
+% run globalDownload, which can download multiple files at once
+globalDownload(madurl, ...
+                         '/tmp', ...
+                         'Bill Rideout', ...
+                         'brideout@haystack.mit.edu', ...
+                         'MIT', ...
+                         'ascii', ...
+                         datenum('20-Jan-1998 00:00:00'), ...
+                         datenum('21-Jan-1998 23:59:59'), ...
+                         30);
+'globalDownload saved files to /tmp'
+
+% madCalculatorWeb runs the Madrigal derivation engine for any point
+data = madCalculatorWeb(cgiurl, datenum(1999,2,15,12,30,0), 45,55,5,-170,-150,10,200,200,0,'sdwht,kp');
+'madCalculator output'
+% print data
+data
+
+'The following is an example of searching for non-local experiments'
+% 61 is the instrument id of Poker Flat ISR - so this will return an
+% experiment not from the Millstone Madrigal site
+startdate = datenum('04/01/2008');
+enddate = datenum('04/30/2008');
+expArray = getExperimentsWeb(cgiurl, 61, startdate, enddate, 0);
+
+% calling this now would fail: expFileArray = getExperimentFilesWeb(cgiurl, expArray(1).id);
+% Instead, get the cgiurl of the non-local experiment
+if (expArray(1).isLocal == 0)
+    cgiurl = getMadrigalCgiUrl(expArray(1).madrigalUrl)
+    expArray = getExperimentsWeb(cgiurl, 61, startdate, enddate, 0);
+end
+
+% now you can get the files
+expFileArray = getExperimentFilesWeb(cgiurl, expArray(1).id);
+for i = 1:length(expFileArray)
+    [s,errmsg] = sprintf('File name: %s, with kindat %i', ...
+            expFileArray(i).name, ...
+            expFileArray(i).kindat);
+     s
+end
+
+          
+  </pre>
+</body>
+</html>
