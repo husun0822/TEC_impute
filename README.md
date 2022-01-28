@@ -14,5 +14,9 @@ For VISTA summary plot with GDC orbits, use code/vista_tec_with_gdc.m
 
 For VISTA keogram plot, use code/tec_keogram.m
 
+For downloading raw Madrigal TEC in hdf5 format and processing them into mat format, use code/madrigal/TECtoMAT.m
+
+For analyzing Madrigal TEC hdf5 data with tall array, use code/madrigal/analysis_tall.m
+
 For our code and data used in our AOAS publication, check code (AOAS) 1.1.zip
 Or one can go to [Google Drive](https://drive.google.com/file/d/1jxF8xfyi7LElG0yA_p-fKMNjl3Tyl3XB/view?usp=sharing) for the full version of the data.
